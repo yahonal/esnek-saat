@@ -145,7 +145,7 @@
     ici:  { beklenen: 480, ogle: 60 },
     sonu: { beklenen: 0,   ogle: 0 }
   };
-  const KESINTI = 15; // kalan süre 15 dk veya üstündeyse düşülür
+  const KESINTI = 15; // pozitif bakiyenin ilk 15 dk'sı bakiyeye yazılmaz
 
   // Dinlenme dilimleri: süre üst sınırı (dk) -> dinlenme (dk)
   const DILIMLER = [
@@ -183,7 +183,7 @@
   function hesap(sure, m) {
     const netCalisma = sure - m.ogle;
     const brut = netCalisma - m.beklenen;
-    const kesinti = brut >= KESINTI ? KESINTI : 0; // eksikte ve 15 dk altında kesinti yok
+    const kesinti = brut > 0 ? Math.min(brut, KESINTI) : 0; // eksikte kesinti yok, en fazla 15 dk
     const dinlenmeTabani = netCalisma - kesinti;    // dinlenme bu süreye göre
     const d = dilimBul(dinlenmeTabani);
     const dinlenme = Math.max(d.dinlenme - m.ogle, 0);
@@ -216,7 +216,8 @@
     const r = hesap(sure, m);
 
     const kesintiNot = r.kesinti ? ""
-      : (r.brut < 0 ? "Beklenen süre dolmadığı için kesinti yok" : "15 dk'nın altında olduğu için kesinti yok");
+      : "Beklenen süre dolmadığı için kesinti yok";
+    const kesintiNot2 = (r.kesinti > 0 && r.kesinti < KESINTI) ? "İlk 15 dk bakiyeye yazılmaz" : kesintiNot;
     const asimNot = r.d.asim ? "15 saat üstü için kural yok, 1 sa 30 dk uygulandı. " : "";
 
     let html = satir("İşyerinde geçen süre", sureYaz(sure));
@@ -226,7 +227,7 @@
     }
     html += satir("Beklenen çalışma", "− " + sureYaz(m.beklenen), "minus");
     html += satir("Brüt esnek bakiye", sureYaz(r.brut, true), "total");
-    html += satir("Şirket kesintisi", "− " + sureYaz(r.kesinti), "minus", kesintiNot);
+    html += satir("Şirket kesintisi", "− " + sureYaz(r.kesinti), "minus", kesintiNot2);
     const dinlenmeNot = asimNot + `${sureYaz(r.dinlenmeTabani)} için dinlenme ${sureYaz(r.d.dinlenme)}`
       + (m.ogle > 0 ? ", öğle arası 1:00 düşüldü" : "");
     html += satir(m.ogle > 0 ? "Ek dinlenme" : "Dinlenme süresi", "− " + sureYaz(r.dinlenme), "minus", dinlenmeNot);
